@@ -4,6 +4,8 @@ import java.io.ObjectOutputStream;
 import java.net.Socket;
 import java.net.UnknownHostException;
 import java.util.Scanner;
+import java.io.File;
+import java.io.FileInputStream;
 
 public class Client {
 	Socket requestSocket;
@@ -30,6 +32,21 @@ public class Client {
 						listFilenames(files);
 						String ans = getAnswer();
 						sendMessage(ans);
+						switch(ans) {
+							case "u": {
+							uploadFile();
+							break;
+							}
+							case "d": {
+							//String fname = getFileToDownload();
+							//sendMessage(fname);
+							System.out.println("TODO: download operation");
+							break;
+							}
+							default : {
+							System.out.println("Invalid operation");
+							}
+						}
 					} else {
 
 						System.out.println("Files not found!");
@@ -82,14 +99,43 @@ public class Client {
 		System.out.println("What do you want to do Download (d) or Upload (u)? \n Please enter the proper letter:");
 		do {
 			input = sc.nextLine();
-			if(input == "u" || input == "d") {
-				ok = true;
+			if(input != "u" || input != "d") {
+				break;
 			}
-			ok = false;
-		} while(!ok);
+			ok = true;
+		} while(ok == false);
 
 		return input;
 	}
+
+	void uploadFile() {
+		String filepath = "./files/";
+		FileInputStream inputStream;
+		Scanner sc = new Scanner(System.in);
+
+		String file = sc.nextLine();
+		if(file.length() < 0) {
+			System.out.println("Filename required");
+		}
+
+		filepath += file;
+
+		File f = new File(filepath);
+
+		if(!f.exists()) {
+			System.out.println("Given file does not exists!");
+			return;
+		}
+
+		inputStream = new FileInputStream(f);
+
+		byte[] buffer = new byte[(int) f.length()];
+		inpustream.read(buffer);
+	}
+
+	/*String getDownloadFile() {
+
+	}*/
 
 	public static void main(String[] args) {
 		Client client = new Client();

@@ -12,6 +12,7 @@ public class Server {
 	ObjectOutputStream out;
 	ObjectInputStream in;
 	String message;
+	String op;
 
 	Server() {}
 
@@ -28,13 +29,20 @@ public class Server {
 				try {
 					message = (String) in.readObject();
 					System.out.println("client> " + message);
+
 					if (message.equals("list")) {
 						listFileNames();
-					} else if (message == "u" || message == "d") {
-						System.out.println("File operation was requested");
 					}
 					else {
 						sendMessage("bye");
+					}
+					op = (String) in.readObject();
+
+					if (op.equals("u")) {
+						System.out.println("Upload operation requested");
+						saveFile();
+					} else if (op.equals("d")) {
+						System.out.println("Download operation requested");
 					}
 
 				} catch(ClassNotFoundException e) {
