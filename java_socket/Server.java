@@ -27,16 +27,20 @@ public class Server {
 			do {
 				try {
 					message = (String) in.readObject();
-					System.out.println("client>" + message);
-					if (message.equals("bye")) {
-						sendMessage("bye");
+					System.out.println("client> " + message);
+					if (message.equals("list")) {
 						listFileNames();
+					} else if (message == "u" || message == "d") {
+						System.out.println("File operation was requested");
 					}
+					else {
+						sendMessage("bye");
+					}
+
 				} catch(ClassNotFoundException e) {
 					System.err.println("Data received in unkonwn format");
 				}
 			}while (!message.equals("bye"));
-
 
 		}catch(IOException ioException) {
 			ioException.printStackTrace();
@@ -70,10 +74,7 @@ public class Server {
 		try{
 			out.writeObject(fileNames);
 			out.flush();
-			System.out.println("Stored files: ");
-			for( String file : fileNames) {
-				System.out.println(file);
-			}
+
 		}catch(IOException ioEx) {
 			ioEx.printStackTrace();
 		}
