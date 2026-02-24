@@ -86,6 +86,26 @@ public class Client {
 		}
 	}
 
+	void sendFileSize(int size) {
+		try {
+			out.writeObject(size);
+			out.flush();
+			System.out.println("client>" + size);
+		} catch(IOException ioEx) {
+			ioEx.printStackTrace();
+		}
+	}
+
+	void sendFile(byte[] file) {
+		try {
+			out.writeObject(file);
+			out.flush();
+			System.out.println("client>" + file);
+		} catch(IOException ioEx) {
+			ioEx.printStackTrace();
+		}
+	}
+
 	void listFilenames(String[] files) {
 		for(String file : files) {
 			System.out.println(file);
@@ -110,27 +130,37 @@ public class Client {
 
 	void uploadFile() {
 		String filepath = "./files/";
-		FileInputStream inputStream;
-		Scanner sc = new Scanner(System.in);
+		try {
+			FileInputStream inputStream;
+			System.out.println("Enter the name of the file: ");
+			Scanner sc = new Scanner(System.in);
 
-		String file = sc.nextLine();
-		if(file.length() < 0) {
-			System.out.println("Filename required");
+			String file = sc.nextLine();
+			if(file.length() < 0) {
+				System.out.println("Filename required");
+			}
+
+
+			filepath += file;
+
+			File f = new File(filepath);
+
+			if(!f.exists()) {
+				System.out.println("Given file does not exists!");
+				return;
+			}
+
+			sendMessage(f.getName());
+
+			inputStream = new FileInputStream(f);
+
+			byte[] buffer = new byte[(int) f.length()];
+			sendFileSize(buffer.length);
+			inputStream.read(buffer);
+			sendFile(buffer);
+		} catch(Exception e) {
+			System.out.println("Error: " + e.getMessage());
 		}
-
-		filepath += file;
-
-		File f = new File(filepath);
-
-		if(!f.exists()) {
-			System.out.println("Given file does not exists!");
-			return;
-		}
-
-		inputStream = new FileInputStream(f);
-
-		byte[] buffer = new byte[(int) f.length()];
-		inpustream.read(buffer);
 	}
 
 	/*String getDownloadFile() {

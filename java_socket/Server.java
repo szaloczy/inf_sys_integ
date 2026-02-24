@@ -39,8 +39,14 @@ public class Server {
 					op = (String) in.readObject();
 
 					if (op.equals("u")) {
-						System.out.println("Upload operation requested");
-						saveFile();
+						String fileName = (String) in.readObject();
+						System.out.println("client>" + fileName);
+						int size = (int) in.readObject();
+						System.out.println("client>" + size);
+
+						byte[] file = (byte[]) in.readObject();
+
+						saveFile(size, file, fileName);
 					} else if (op.equals("d")) {
 						System.out.println("Download operation requested");
 					}
@@ -85,6 +91,13 @@ public class Server {
 
 		}catch(IOException ioEx) {
 			ioEx.printStackTrace();
+		}
+	}
+
+	void saveFile(int fileSize, byte[] file, String fileName) {
+		try(OutputStream out = new OutputStream) {
+			//TODO
+		} catch(Exception e) {
 		}
 	}
 
