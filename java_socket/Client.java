@@ -1,11 +1,7 @@
-import java.io.IOException;
-import java.io.ObjectInputStream;
-import java.io.ObjectOutputStream;
 import java.net.Socket;
 import java.net.UnknownHostException;
 import java.util.Scanner;
-import java.io.File;
-import java.io.FileInputStream;
+import java.io.*;
 
 public class Client {
 	Socket requestSocket;
@@ -23,12 +19,13 @@ public class Client {
 			out = new ObjectOutputStream(requestSocket.getOutputStream());
 			in = new ObjectInputStream(requestSocket.getInputStream());
 
+			message = "";
 			do {
 				try {
 					sendMessage("list");
 					files = (String[]) in.readObject();
 
-					if(files.length > 0) {
+					if(files != null && files.length > 0) {
 						listFilenames(files);
 						String ans = getAnswer();
 						sendMessage(ans);
@@ -38,9 +35,11 @@ public class Client {
 							break;
 							}
 							case "d": {
-							//String fname = getFileToDownload();
-							//sendMessage(fname);
-							System.out.println("TODO: download operation");
+							String fname = getFileToDownload(files);
+							sendMessage(fname);
+							byte[] fileBytes = (byte[]) in.readObject();
+							saveFile(fileBytes, fname);
+
 							break;
 							}
 							default : {
@@ -51,11 +50,14 @@ public class Client {
 
 						System.out.println("Files not found!");
 						sendMessage("bye");
+						message = "bye";
+						break;
 					}
 
 					message = (String) in.readObject();
 				} catch(Exception e) {
 					System.err.println("data received in unknown format: " + e.getMessage());
+					message = "bye";
 				}
 
 			}while(!"bye".equals(message));
@@ -114,18 +116,15 @@ public class Client {
 
 	String getAnswer() {
 		String input;
-		boolean ok = false;
 		Scanner sc = new Scanner(System.in);
 		System.out.println("What do you want to do Download (d) or Upload (u)? \n Please enter the proper letter:");
 		do {
 			input = sc.nextLine();
-			if(input != "u" || input != "d") {
-				break;
+			if(input.equals("u") || input.equals("d")) {
+				return input;
 			}
-			ok = true;
-		} while(ok == false);
-
-		return input;
+			System.out.println("Invalid input! Enter 'u' or 'd':");
+		} while(true);
 	}
 
 	void uploadFile() {
@@ -160,12 +159,41 @@ public class Client {
 			sendFile(buffer);
 		} catch(Exception e) {
 			System.out.println("Error: " + e.getMessage());
-		}
+		} 
 	}
 
-	/*String getDownloadFile() {
+	String getFileToDownload(String files[]) {
+		boolean ok = false;
+		Scanner sc = new Scanner(System.in);
+		System.out.println("Enter the name of the file you want to download: ");
+		String file;
+		do {
+			file = sc.nextLine();
+			for(String f : files) {
+				if(f.equals(file)) {
+					ok = true;
+					break;
+				}
+			}
+			if(ok == true) {
+				return file;
+			}
+			System.out.println("File not found! Please enter a valid filename:");
 
-	}*/
+		} while(!ok);
+
+		
+		return file;
+	}
+
+	void saveFile(byte[] fileBytes, String fileName) {
+		try(FileOutputStream fos = new FileOutputStream("./files/" + fileName)) {
+			fos.write(fileBytes);
+			System.out.println("File downloaded successfully");
+		} catch(IOException ex) {
+			ex.printStackTrace();
+		}
+	}
 
 	public static void main(String[] args) {
 		Client client = new Client();

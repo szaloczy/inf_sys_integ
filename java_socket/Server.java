@@ -1,9 +1,6 @@
-import java.io.IOException;
-import java.io.ObjectInputStream;
-import java.io.ObjectOutputStream;
 import java.net.ServerSocket;
 import java.net.Socket;
-import java.io.File;
+import java.io.*;
 
 public class Server {
 
@@ -28,8 +25,6 @@ public class Server {
 			do {
 				try {
 					message = (String) in.readObject();
-					System.out.println("client> " + message);
-
 					if (message.equals("list")) {
 						listFileNames();
 					}
@@ -40,15 +35,16 @@ public class Server {
 
 					if (op.equals("u")) {
 						String fileName = (String) in.readObject();
-						System.out.println("client>" + fileName);
+						System.out.println("client> saving" + fileName);
 						int size = (int) in.readObject();
-						System.out.println("client>" + size);
-
 						byte[] file = (byte[]) in.readObject();
 
 						saveFile(size, file, fileName);
 					} else if (op.equals("d")) {
-						System.out.println("Download operation requested");
+						System.out.println("Server> Download operation requested");
+						String fileName = (String) in.readObject();
+						System.out.println("Client> requested file: " + fileName);
+						sendFile(fileName);
 					}
 
 				} catch(ClassNotFoundException e) {
@@ -84,22 +80,53 @@ public class Server {
 
 		File f = new File("D:/Projects/university/msc_1/inf_sys_integ/java_socket/store");
 		fileNames = f.list();
+		if (fileNames == null) {
+			fileNames = new String[0];
+		}
 
 		try{
 			out.writeObject(fileNames);
 			out.flush();
-
+			
 		}catch(IOException ioEx) {
 			ioEx.printStackTrace();
 		}
 	}
 
 	void saveFile(int fileSize, byte[] file, String fileName) {
-		try(OutputStream out = new OutputStream) {
-			//TODO
-		} catch(Exception e) {
+		try(FileOutputStream fos = new FileOutputStream("D:/Projects/university/msc_1/inf_sys_integ/java_socket/store/" + fileName)) {
+			fos.write(file);
+			System.out.println("Server> File uploaded successfully");
+			sendMessage("bye");
+		} catch(IOException ex) {
+			ex.printStackTrace();
 		}
 	}
+
+	void sendFile(String fileName) {
+		File file = new File("./store/" + fileName);
+		if(file.exists()) {
+			System.out.println("Server> File found, sending file size");
+			
+			try(FileInputStream fis = new FileInputStream(file)) {
+				byte[] fileData = new byte[(int) file.length()];
+				fis.read(fileData);
+				
+				out.writeObject(fileData);
+				out.flush();
+
+				System.out.println("Server> File sent successfully");
+				sendMessage("bye");
+			} catch(IOException ex) {
+				ex.printStackTrace();
+			}
+		} else {
+			System.out.println("Server> File not found");
+			sendMessage("bye");
+		}
+	}
+
+
 
 	public static void main(String[] args) {
 		Server server = new Server();
