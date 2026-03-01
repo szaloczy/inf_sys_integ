@@ -4,6 +4,55 @@ import java.io.*;
 
 public class Server {
 
+	private static final int PORT = 8080;
+	private static final String STORE_DIR = "store";
+	private static final int BUFFER_SIZE = 4096;
+
+	public static void main(String[] args) {
+		File dir = new File(STORE_DIR);
+		if (!dir.exists()) {
+			dir.mkdir();
+		}
+
+		try (ServerSocket serverSocket = new ServerSocket(PORT)) {
+			System.out.println("Server listenign on Port " + PORT);
+
+			while(true) {
+				Socket clientSocket = serverSocket.accept();
+				System.out.println("Client connected: " + clientSocket.getInetAddress());
+				new ClientHandler(clientSocket).start();
+			}
+		} catch(IOException e) {
+			e.printStackTrace();
+		}
+	}
+
+	static class ClientHandler extends Thread {
+		private Socket socket;
+
+		ClientHandler(Socket socket) {
+			this.socket = socket;
+		}
+
+		@Override
+		public void run() {
+			try(
+					BufferedReader reader = new BufferedReader(new InputStreamReader(socket.getInputStream()));
+					BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(socket.getOutputStream()));
+					DataInputStream dataIn = new DataInputStream(socket.getInputStream());
+					DataOutputStream dataOut = new DataOutputStream(socket.getOutputStream());
+			) {
+				String command;
+
+				while((command = reader.readLine()) != null) {
+					
+				}
+			} catch() {
+
+			}
+		}
+	}
+
 	ServerSocket providerSocket;
 	Socket connection = null;
 	ObjectOutputStream out;
@@ -36,10 +85,9 @@ public class Server {
 					if (op.equals("u")) {
 						String fileName = (String) in.readObject();
 						System.out.println("client> saving" + fileName);
-						int size = (int) in.readObject();
 						byte[] file = (byte[]) in.readObject();
 
-						saveFile(size, file, fileName);
+						saveFile(file, fileName);
 					} else if (op.equals("d")) {
 						System.out.println("Server> Download operation requested");
 						String fileName = (String) in.readObject();
@@ -93,7 +141,7 @@ public class Server {
 		}
 	}
 
-	void saveFile(int fileSize, byte[] file, String fileName) {
+	void saveFile(byte[] file, String fileName) {
 		try(FileOutputStream fos = new FileOutputStream("D:/Projects/university/msc_1/inf_sys_integ/java_socket/store/" + fileName)) {
 			fos.write(file);
 			System.out.println("Server> File uploaded successfully");
@@ -135,6 +183,18 @@ public class Server {
 				System.out.println("Server is listening on port 8080");
 				server.run();
 			}
+		}
+
+		try(ServerSocket serverSocket = new ServerSocket(8080)) {
+			System.out.println("Server is listening on port 8080");
+
+			while(true) {
+				Socket client = serverSocket.accept();
+				new ClientHandler(client).start();
+			}
+
+		} catch(IOException ex) {
+			ex.printStackTrace();
 		}
 
 	}
