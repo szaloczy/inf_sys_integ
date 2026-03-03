@@ -5,8 +5,8 @@ import java.io.*;
 public class Server {
 
 	private static final int PORT = 8080;
-	private static final String STORE_DIR = "store";
 	private static final int BUFFER_SIZE = 4096;
+	private static final String STORE_DIR = "store";
 
 	public static void main(String[] args) {
 		File dir = new File(STORE_DIR);
@@ -15,7 +15,7 @@ public class Server {
 		}
 
 		try (ServerSocket serverSocket = new ServerSocket(PORT)) {
-			System.out.println("Server listenign on Port " + PORT);
+			System.out.println("Server listening on Port " + PORT);
 
 			while(true) {
 				Socket clientSocket = serverSocket.accept();
@@ -49,11 +49,21 @@ public class Server {
 						handleList(writer);
 					} else if (command.startsWith("UPLOAD")) {
 						String filename = command.split(" ")[1];
-						handleUpload(filename, dataOut, writer);
+						handleUpload(filename, dataIn, writer);
+					} else if (command.startsWith("DOWNLOAD")) {
+						String filename = command.split(" ")[1];
+						handleDownload(filename, dataOut, writer);
+					} else if (command.equalsIgnoreCase("EXIT")) {
+						break;
+					}
+
+					else {
+						writer.write("Unknown command\n");
+						writer.flush();
 					}
 				}
 			} catch(IOException e) {
-				e.printStackTrace();
+				System.out.println("Client Disconnected");
 			}
 		}
 
@@ -95,6 +105,37 @@ public class Server {
 
 			writer.write("File uploaded successfully\n");
 			writer.flush();
+		}
+
+		private void handleDownload(String filename, DataOutputStream dataOut, BufferedWriter writer) throws IOException {
+			if (filename.contains("..")) {
+				writer.write("Invalid filne name\n");
+				writer.flush();
+				return;
+			}
+
+			File file = new File(STORE_DIR, File.separator + filename);
+
+			if (!file.exists()) {
+				writer.write("File not found\n");
+				writer.flush();
+				return;
+			}
+
+			writer.write("OK\n");
+			writer.flush();
+
+			dataOut.writeLong(file.length());
+
+			try(FileInputStream fis = new FileInputStream(file)) {
+				byte[] buffer = new byte[BUFFER_SIZE];
+				int read;
+
+				while((read = fis.read(buffer)) != -1) {
+					dataOut.write(buffer, 0, read);
+				}
+			}
+			dataOut.flush();
 		}
 	}
 
