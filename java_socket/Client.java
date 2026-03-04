@@ -1,9 +1,45 @@
+import java.net.ServerSocket;
 import java.net.Socket;
 import java.net.UnknownHostException;
 import java.util.Scanner;
 import java.io.*;
 
 public class Client {
+	private static final int PORT = 8080;
+	private static final int BUFFER_SIZE = 4096;
+	private static final String SERVER_ADDRESS = "localhost";
+	private static final String FILES_DIR = "files";
+
+
+	public static void main(String[] args) {
+		File dir = new File(FILES_DIR);
+		if(!dir.exists()) {
+			dir.mkdir();
+		}
+
+		try(Socket socket = new Socket(SERVER_ADDRESS, PORT); 
+			BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(socket.getOutputStream())); 
+			BufferedReader reader = new BufferedReader(new InputStreamReader(socket.getInputStream()))) {
+			while(true) {
+				writer.write("LIST\n");
+				writer.flush();
+
+				String[] files= reader.readLine().split(",");
+				for (String file : files) {
+					System.out.println(file);
+				}
+
+				writer.write("EXIT\n");
+				writer.flush();
+			}
+		} catch(IOException e) {
+			e.printStackTrace();
+		}
+	}
+
+}
+	/* 
+
 	Socket requestSocket;
 	ObjectOutputStream out;
 	ObjectInputStream in;
@@ -200,3 +236,4 @@ public class Client {
 		client.run();
 	}
 }
+*/
