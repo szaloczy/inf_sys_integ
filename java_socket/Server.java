@@ -6,7 +6,7 @@ public class Server {
 
 	private static final int PORT = 8080;
 	private static final int BUFFER_SIZE = 4096;
-	private static final String STORE_DIR = "store";
+	private static final String STORE_DIR = "java_socket/store";
 
 	public static void main(String[] args) {
 		File dir = new File(STORE_DIR);
@@ -54,6 +54,8 @@ public class Server {
 						String filename = command.split(" ")[1];
 						handleDownload(filename, dataOut, writer);
 					} else if (command.equalsIgnoreCase("EXIT")) {
+						writer.write("EXIT\n");
+						writer.flush();
 						break;
 					}
 

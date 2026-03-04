@@ -1,239 +1,98 @@
-import java.net.ServerSocket;
+import java.io.BufferedReader;
+import java.io.BufferedWriter;
+import java.io.DataInputStream;
+import java.io.DataOutputStream;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
+import java.io.OutputStreamWriter;
 import java.net.Socket;
-import java.net.UnknownHostException;
+import java.nio.file.Paths;
 import java.util.Scanner;
-import java.io.*;
 
 public class Client {
+
+	private static final String HOST = "localhost";
 	private static final int PORT = 8080;
 	private static final int BUFFER_SIZE = 4096;
-	private static final String SERVER_ADDRESS = "localhost";
-	private static final String FILES_DIR = "files";
-
+	private static final String LOCAL_DIR = "java_socket/files";
 
 	public static void main(String[] args) {
-		File dir = new File(FILES_DIR);
-		if(!dir.exists()) {
+		File dir = new File(LOCAL_DIR);
+		if (!dir.exists()) {
 			dir.mkdir();
 		}
 
-		try(Socket socket = new Socket(SERVER_ADDRESS, PORT); 
-			BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(socket.getOutputStream())); 
-			BufferedReader reader = new BufferedReader(new InputStreamReader(socket.getInputStream()))) {
-			while(true) {
-				writer.write("LIST\n");
-				writer.flush();
+		try (
+			Socket requestSocket = new Socket(HOST, PORT);
+			BufferedReader reader = new BufferedReader(new InputStreamReader(requestSocket.getInputStream()));
+			BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(requestSocket.getOutputStream()));
+			DataOutputStream dataOut = new DataOutputStream(requestSocket.getOutputStream());
+			DataInputStream dataIn = new DataInputStream(requestSocket.getInputStream());
+			Scanner sc = new Scanner(System.in);
+		) {
+			System.out.println("Connected to Server");
 
-				String[] files= reader.readLine().split(",");
-				for (String file : files) {
-					System.out.println(file);
-				}
+			while (true) {
+				System.out.println("\n1 - LIST");
+                System.out.println("2 - UPLOAD");
+                System.out.println("3 - DOWNLOAD");
+                System.out.println("4 - EXIT");
+                System.out.print("Choose option: ");
 
-				writer.write("EXIT\n");
-				writer.flush();
-			}
-		} catch(IOException e) {
-			e.printStackTrace();
-		}
-	}
+				String choice = sc.nextLine();
+				
+				switch (choice) {
+					case "1":
+						writer.write("LIST\n");
+						writer.flush();
 
-}
-	/* 
-
-	Socket requestSocket;
-	ObjectOutputStream out;
-	ObjectInputStream in;
-	String message;
-	String[] files;
-
-	Client() {}
-
-	void run() {
-		try {
-			requestSocket = new Socket("localhost", 8080);
-
-			out = new ObjectOutputStream(requestSocket.getOutputStream());
-			in = new ObjectInputStream(requestSocket.getInputStream());
-
-			message = "";
-			do {
-				try {
-					sendMessage("list");
-					files = (String[]) in.readObject();
-
-					if(files != null && files.length > 0) {
-						listFilenames(files);
-						String ans = getAnswer();
-						sendMessage(ans);
-						switch(ans) {
-							case "u": {
-							uploadFile();
-							break;
+						System.out.println("Files on Sever:");
+						requestSocket.setSoTimeout(300);
+						try {
+							String line;
+							while((line = reader.readLine()) != null) {
+								System.out.println(" - " + line);
 							}
-							case "d": {
-							String fname = getFileToDownload(files);
-							sendMessage(fname);
-							byte[] fileBytes = (byte[]) in.readObject();
-							saveFile(fileBytes, fname);
+						} catch (IOException e) {}
+						requestSocket.setSoTimeout(0);
+						break;
+					case "2": 
+						System.out.println("Enter a filename to upload: ");
+						String uploadName = sc.nextLine();
 
+						File uploadFile = new File(Paths.get(LOCAL_DIR, uploadName).toString());
+						if(!uploadFile.exists()) {
+							System.out.println("File does not exists");
 							break;
-							}
-							default : {
-							System.out.println("Invalid operation");
+						}
+
+						writer.write("UPLOAD " + uploadName + "\n");
+						writer.flush();
+
+						dataOut.writeLong(uploadFile.length());
+
+						try(FileInputStream fis = new FileInputStream(uploadFile)) {
+							byte[] buffer = new byte[BUFFER_SIZE];
+							int read;
+
+							while((read = fis.read(buffer)) != -1) {
+								dataOut.write(buffer, 0, read);
 							}
 						}
-					} else {
-
-						System.out.println("Files not found!");
-						sendMessage("bye");
-						message = "bye";
+						dataOut.flush();
 						break;
-					}
-
-					message = (String) in.readObject();
-				} catch(Exception e) {
-					System.err.println("data received in unknown format: " + e.getMessage());
-					message = "bye";
-				}
-
-			}while(!"bye".equals(message));
-
-		} catch(UnknownHostException unknownHost) {
-			System.err.println("You are try to connect to an unknown host");
-		} catch(IOException ioEx) {
-			ioEx.printStackTrace();
-		} finally {
-			try {
-				out.close();
-				in.close();
-				requestSocket.close();
-			} catch(IOException ioEx) {
-				ioEx.printStackTrace();
-			}
-		}
-
-	}
-
-	void sendMessage(String msg) {
-		try {
-			out.writeObject(msg);
-			out.flush();
-			System.out.println("client>" + msg);
-		} catch(IOException ioEx) {
-			ioEx.printStackTrace();
-		}
-	}
-
-	void sendFileSize(int size) {
-		try {
-			out.writeObject(size);
-			out.flush();
-			System.out.println("client>" + size);
-		} catch(IOException ioEx) {
-			ioEx.printStackTrace();
-		}
-	}
-
-	void sendFile(byte[] file) {
-		try {
-			out.writeObject(file);
-			out.flush();
-			System.out.println("client>" + file);
-		} catch(IOException ioEx) {
-			ioEx.printStackTrace();
-		}
-	}
-
-	void listFilenames(String[] files) {
-		for(String file : files) {
-			System.out.println(file);
-		}
-	}
-
-	String getAnswer() {
-		String input;
-		Scanner sc = new Scanner(System.in);
-		System.out.println("What do you want to do Download (d) or Upload (u)? \n Please enter the proper letter:");
-		do {
-			input = sc.nextLine();
-			if(input.equals("u") || input.equals("d")) {
-				return input;
-			}
-			System.out.println("Invalid input! Enter 'u' or 'd':");
-		} while(true);
-	}
-
-	void uploadFile() {
-		String filepath = "./files/";
-		try {
-			FileInputStream inputStream;
-			System.out.println("Enter the name of the file: ");
-			Scanner sc = new Scanner(System.in);
-
-			String file = sc.nextLine();
-			if(file.length() < 0) {
-				System.out.println("Filename required");
-			}
-
-
-			filepath += file;
-
-			File f = new File(filepath);
-
-			if(!f.exists()) {
-				System.out.println("Given file does not exists!");
-				return;
-			}
-
-			sendMessage(f.getName());
-
-			inputStream = new FileInputStream(f);
-
-			byte[] buffer = new byte[(int) f.length()];
-			sendFileSize(buffer.length);
-			inputStream.read(buffer);
-			sendFile(buffer);
-		} catch(Exception e) {
-			System.out.println("Error: " + e.getMessage());
-		} 
-	}
-
-	String getFileToDownload(String files[]) {
-		boolean ok = false;
-		Scanner sc = new Scanner(System.in);
-		System.out.println("Enter the name of the file you want to download: ");
-		String file;
-		do {
-			file = sc.nextLine();
-			for(String f : files) {
-				if(f.equals(file)) {
-					ok = true;
-					break;
+				
+					default:
+						break;
 				}
 			}
-			if(ok == true) {
-				return file;
-			}
-			System.out.println("File not found! Please enter a valid filename:");
-
-		} while(!ok);
-
-		
-		return file;
-	}
-
-	void saveFile(byte[] fileBytes, String fileName) {
-		try(FileOutputStream fos = new FileOutputStream("./files/" + fileName)) {
-			fos.write(fileBytes);
-			System.out.println("File downloaded successfully");
-		} catch(IOException ex) {
-			ex.printStackTrace();
+			
+		} catch (Exception e) {
+			// TODO: handle exception
 		}
-	}
-
-	public static void main(String[] args) {
-		Client client = new Client();
-		client.run();
-	}
+ 	}
 }
-*/
