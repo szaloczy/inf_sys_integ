@@ -1,5 +1,7 @@
 package java_udp;
 
+import java.io.File;
+import java.io.FileOutputStream;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.net.InetAddress;
@@ -18,6 +20,21 @@ public class Component2 {
         serverSocket.receive(receivePacket);
                 
         String text = new String(receivePacket.getData());
+        int dataSize = Integer.parseInt(text.trim());
+
+        File savedFile = new File ("java_udp/received.png");
+        FileOutputStream fos = new FileOutputStream(savedFile);
+
+        byte[] filedata = new byte[dataSize];
+        int bytesRead = 0;
+
+        while(bytesRead < dataSize) {
+            DatagramPacket filePacket = new DatagramPacket(filedata, filedata.length);
+            serverSocket.receive(filePacket);
+            fos.write(filePacket.getData(), 0, filePacket.getLength());
+            bytesRead += filePacket.getLength();
+        }
+        fos.close();    
                 
         System.out.println("kaptam: " + text);
                 
