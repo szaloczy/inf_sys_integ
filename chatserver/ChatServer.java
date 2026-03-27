@@ -1,8 +1,8 @@
 package chatserver;
 
 
-import java.util.ArrayList;
 import java.util.List;
+import java.util.ArrayList;
 import java.rmi.RemoteException;
 import java.rmi.server.UnicastRemoteObject;
 
@@ -19,6 +19,10 @@ public class ChatServer extends UnicastRemoteObject implements IChatServer {
         client.tell("client connected");
         publish(client.getName() + " connected.");
         v.add(client);
+    
+        for(IChatClient c : v) {
+            c.broadcastNewUsers(v);
+        }
         
         return true;
     }

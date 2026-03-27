@@ -47,9 +47,13 @@ public class ChatUI {
                         "ERROR, we wouldn't connect....");
             }
         } else {
-            updateUsers(null);
+            remove(client);
             connect.setText("Connect");
         }
+    }
+
+    public void doDisConnect() {
+
     }
    
     public void sendText() {
@@ -84,6 +88,17 @@ public class ChatUI {
                 }
             }
         list.setModel(listModel);
+    }
+
+    public void remove(IChatClient client) {
+            try {
+                server.getConnected().remove(client);
+                for(IChatClient c : server.getConnected()) {
+                    c.broadcastNewUsers(server.getConnected());
+                }
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
     }
    
     public static void main(String[] args) {

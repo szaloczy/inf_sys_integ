@@ -2,7 +2,10 @@ package chatserver;
 
 import java.rmi.RemoteException;
 import java.rmi.server.UnicastRemoteObject;
+import java.util.ArrayList;
 import java.util.List;
+
+import javax.swing.DefaultListModel;
    
 public class ChatClient extends UnicastRemoteObject implements IChatClient {
     private String name;
@@ -23,5 +26,10 @@ public class ChatClient extends UnicastRemoteObject implements IChatClient {
    
     public void setGUI(ChatUI t) {
         ui = t;
+    }
+
+    @Override
+    public void broadcastNewUsers(ArrayList<IChatClient> users) throws RemoteException {
+      ui.updateUsers(users);
     }
 }
