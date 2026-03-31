@@ -11,4 +11,6 @@ public interface IChatServer extends Remote {
     public void publish(String s) throws RemoteException;
    
     public ArrayList<IChatClient> getConnected() throws RemoteException;
+
+    public void removeUser(String name) throws RemoteException;
 }

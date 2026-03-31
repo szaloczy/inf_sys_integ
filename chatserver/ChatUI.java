@@ -5,6 +5,7 @@ import java.awt.GridLayout;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.rmi.Naming;
+import java.rmi.RemoteException;
 import java.util.ArrayList;
    
 import javax.swing.DefaultListModel;
@@ -47,7 +48,14 @@ public class ChatUI {
                         "ERROR, we wouldn't connect....");
             }
         } else {
-            updateUsers(null);
+            try {
+                server.removeUser(client.getName());
+                updateUsers(server.getConnected());
+
+            } catch (RemoteException e) {
+                e.printStackTrace();
+            }
+            //updateUsers(null);
             connect.setText("Connect");
         }
     }
@@ -85,7 +93,7 @@ public class ChatUI {
             }
         list.setModel(listModel);
     }
-   
+
     public static void main(String[] args) {
         System.out.println("Hello World !");
         ChatUI c = new ChatUI();
