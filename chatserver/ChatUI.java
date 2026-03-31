@@ -59,6 +59,10 @@ public class ChatUI {
             connect.setText("Connect");
         }
     }
+
+    public void doDisConnect() {
+
+    }
    
     public void sendText() {
         if (connect.getText().equals("Connect")) {
