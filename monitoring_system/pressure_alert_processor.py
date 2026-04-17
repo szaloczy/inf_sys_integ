@@ -9,18 +9,22 @@ class PressureAlertProcessor:
         self.high_pressure_counter = 0
 
 
+    def process_measurement(self, measurement: int):
+        if measurement >= 8:
+            self.high_pressure_counter += 1
+        else:
+            self.high_pressure_counter = 0
+
+        if self.is_high_pressure():
+            self.send_alert()
+            self.high_pressure_counter = 0
+
+
     def start_consuming(self):
         def callback(ch, method, properties, body):
             measurement = int(body.decode())
             print(f'Received measurement: {measurement}')
-            if measurement >= 8:
-                self.high_pressure_counter += 1
-            else:
-                self.high_pressure_counter = 0
-
-            if self.is_high_pressure():
-                self.send_alert()
-                self.high_pressure_counter = 0
+            self.process_measurement(measurement)
 
         self.channel.basic_consume(queue='pressureQueue', on_message_callback=callback, auto_ack=True)
         self.channel.start_consuming()
