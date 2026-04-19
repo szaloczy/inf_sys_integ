@@ -10,7 +10,7 @@ class PressureAlertProcessor:
 
 
     def process_measurement(self, measurement: int):
-        if measurement >= 8:
+        if measurement > 8:
             self.high_pressure_counter += 1
         else:
             self.high_pressure_counter = 0
