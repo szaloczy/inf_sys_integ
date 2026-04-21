@@ -35,6 +35,15 @@ class TestPressureAlertProcessor(unittest.TestCase):
         self.assertEqual(processor.high_pressure_counter, 1)
 
 
+    def test_single_high_pressure_counter(self):
+        processor = PressureAlertProcessor()
+        processor.send_alert = MagicMock()
+
+        processor.process_measurement(9)
+
+        processor.send_alert.assert_not_called()
+
+
     def test_counter_not_increase_below_or_equal_8(self):
         processor = PressureAlertProcessor()
 
@@ -76,7 +85,24 @@ class TestPressureAlertProcessor(unittest.TestCase):
         processor.process_measurement(9)
 
         processor.send_alert.assert_not_called()
-        self.assertTrue(processor.high_pressure_counter, 1)
+        self.assertEqual(processor.high_pressure_counter, 1)
+
+
+    def test_consuming_callback_decodes_and_processes_message(self):
+        processor = PressureAlertProcessor()
+        processor.process_measurement = MagicMock()
+
+        processor.start_consuming()
+
+        self.mock_blocking_conn.return_value.channel.return_value.basic_consume.assert_called_once()
+
+        _, kwargs = self.mock_blocking_conn.return_value.channel.return_value.basic_consume.call_args
+        self.assertEqual(kwargs["queue"], "pressureQueue")
+
+        callback = kwargs["on_message_callback"]
+        callback(None, None, None, b"9")
+
+        processor.process_measurement.assert_called_once_with(9)
 
 if __name__ == '__main__':
     unittest.main()
