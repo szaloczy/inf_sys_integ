@@ -1,0 +1,20 @@
+version: "3.8"
+
+services:
+  ldap:
+    image: osixia/openldap:1.5.0
+    container_name: demo-ldap
+    environment:
+      LDAP_ORGANISATION: "University Demo"
+      LDAP_DOMAIN: "demo.local"
+      LDAP_ADMIN_PASSWORD: admin
+    ports:
+      - "389:389"
+
+  ldap-admin:
+    image: osixia/phpldapadmin:0.9.0
+    container_name: demo-ldap-admin
+    environment:
+      PHPLDAPADMIN_LDAP_HOSTS: ldap
+    ports:
+      - "6443:443"
